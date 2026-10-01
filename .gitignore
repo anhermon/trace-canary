@@ -18,3 +18,4 @@ artifacts/
 *.db
 *.sqlite
 *.sqlite3
+artifacts-mcp-trace-wrap/

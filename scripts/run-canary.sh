@@ -18,10 +18,11 @@ echo ""
 echo "OK. Artifacts under $ROOT/artifacts"
 if command -v mcp-trace >/dev/null 2>&1; then
   echo "mcp-trace on PATH: $(mcp-trace version 2>&1 | head -1)"
-  echo "Dogfood tip: wrap the fixture with:"
-  echo "  mcp-trace --stdio -- python3 -m trace_canary.fixture_server"
-  echo "Point an MCP client at the proxy and scan your OTLP/JSONL export with:"
-  echo "  python3 -m trace_canary scan /path/to/export"
+  echo "Optional wrap smoke (HTTP client → mcp-trace --port → fixture stdio):"
+  echo "  ./scripts/wrap-mcp-trace-smoke.sh"
+  echo "  # or manually (pick a free --port; default 8001 is often busy):"
+  echo "  mcp-trace --stdio --port 18021 --otel-stdout -- python3 -m trace_canary.fixture_server"
+  echo "  # then: curl POST http://127.0.0.1:18021/ …; scan your export"
 else
   echo "mcp-trace not on PATH — install from https://github.com/anhermon/mcp-trace/releases"
 fi

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -18,8 +17,9 @@ def _mcp_trace_info() -> dict[str, Any]:
     info: dict[str, Any] = {"on_path": bool(path), "path": path}
     if not path:
         info["hint"] = (
-            "Install from https://github.com/anhermon/mcp-trace/releases then re-run "
-            "with TRACE_CANARY_WRAP_MCP_TRACE=1 to dogfood the proxy (capture_tool_args=false)."
+            "Install from https://github.com/anhermon/mcp-trace/releases then dogfood with "
+            "./scripts/wrap-mcp-trace-smoke.sh (HTTP client → mcp-trace --port → fixture stdio; "
+            "capture_tool_args=false)."
         )
         return info
     try:
@@ -33,6 +33,13 @@ def _mcp_trace_info() -> dict[str, Any]:
         info["version_stdout"] = (proc.stdout or proc.stderr or "").strip()
     except OSError as exc:
         info["version_error"] = str(exc)
+    info["wrap_hint"] = (
+        "mcp-trace does not auto-wrap this harness. Use: "
+        "./scripts/wrap-mcp-trace-smoke.sh  "
+        "or: mcp-trace --stdio --port 18021 --otel-stdout -- "
+        "python3 -m trace_canary.fixture_server  "
+        "(HTTP client → --port; --stdio is upstream only)."
+    )
     return info
 
 
@@ -67,7 +74,6 @@ def run_harness(out_dir: str | Path, mode: Mode = "redact") -> dict[str, Any]:
             "tool_calls": len(session.get("tool_results") or []),
             "fixture_stderr_tail": stderr[-2000:],
             "mcp_trace": _mcp_trace_info(),
-            "wrap_env": os.environ.get("TRACE_CANARY_WRAP_MCP_TRACE"),
         }
     )
     return {

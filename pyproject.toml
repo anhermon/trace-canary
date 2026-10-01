@@ -43,7 +43,7 @@ Issues = "https://github.com/anhermon/trace-canary/issues"
 include = ["trace_canary*"]
 
 [tool.setuptools.package-data]
-trace_canary = []
+trace_canary = ["data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

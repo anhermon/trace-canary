@@ -7,8 +7,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-PKG_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_SECRETS = PKG_ROOT / "canaries" / "secrets.json"
+_PKG_DIR = Path(__file__).resolve().parent
+# Prefer packaged data; fall back to repo-root canaries/ for editable checkouts.
+DEFAULT_SECRETS = _PKG_DIR / "data" / "secrets.json"
+if not DEFAULT_SECRETS.exists():
+    DEFAULT_SECRETS = _PKG_DIR.parent / "canaries" / "secrets.json"
 
 
 @lru_cache(maxsize=1)

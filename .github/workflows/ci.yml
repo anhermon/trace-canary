@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  canary:
+    name: privacy-canary
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Self-test (raw must leak, redact must pass)
+        run: python -m trace_canary self-test --sarif raw-leaks.sarif
+
+      - name: Redact run + scan (CI path must stay clean)
+        run: |
+          python -m trace_canary run --mode redact --out artifacts
+          python -m trace_canary scan artifacts --sarif artifacts/canary.sarif
+          test -f artifacts/session.jsonl
+          test -f artifacts/otlp-export.json
+          test -f artifacts/traces.sqlite
+
+      - name: Upload SARIF artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-sarif
+          path: |
+            raw-leaks.sarif
+            artifacts/canary.sarif
+          if-no-files-found: warn
+
+      - name: Unit tests
+        run: |
+          pip install pytest
+          pytest -q

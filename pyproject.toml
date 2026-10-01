@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trace-canary"
+version = "0.1.0"
+description = "Runtime privacy regression harness for agent/MCP observability — plant canaries, prove they never appear in traces."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+  { name = "Angel Hermon", email = "107818450+anhermon@users.noreply.github.com" },
+]
+keywords = ["mcp", "opentelemetry", "privacy", "canary", "observability", "ci"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+trace-canary = "trace_canary.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/anhermon/trace-canary"
+Repository = "https://github.com/anhermon/trace-canary"
+Issues = "https://github.com/anhermon/trace-canary/issues"
+"mcp-trace" = "https://github.com/anhermon/mcp-trace"
+"agent-obs-lab" = "https://github.com/anhermon/agent-obs-lab"
+
+[tool.setuptools.packages.find]
+include = ["trace_canary*"]
+
+[tool.setuptools.package-data]
+trace_canary = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

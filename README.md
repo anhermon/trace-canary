@@ -41,7 +41,11 @@ If any of them appear in an artifact, CI fails.
 
 ## Quick start (local)
 
-Requirements: **Python 3.10+** (stdlib only — no runtime deps).
+Requirements: **Python 3.10+** (stdlib only — **no runtime deps**).
+
+The primary proof path is the stdlib self-test / `./scripts/run-canary.sh`.
+**pytest is optional** (dev only: `pip install -e '.[dev]' && pytest`); CI installs
+it for unit tests, but you do not need pytest for day-to-day or CI-equivalent runs.
 
 ```bash
 git clone https://github.com/anhermon/trace-canary
@@ -83,15 +87,24 @@ python3 -m trace_canary self-test [--sarif raw.sarif] [--keep]
 
 1. Install [mcp-trace](https://github.com/anhermon/mcp-trace) (release binary or
    `go install …@v2.0.3`). Keep **`capture_tool_args: false`** (default).
-2. Wrap the fixture:
+2. Wrap the fixture. **`--stdio` means the upstream is stdio** (the fixture).
+   Your MCP client must speak **HTTP to mcp-trace’s `--port`** — do **not** pipe
+   JSON-RPC into mcp-trace’s stdin (that hangs; stdin is for the child process).
 
    ```bash
-   mcp-trace --stdio -- python3 -m trace_canary.fixture_server
-   # client → mcp-trace :8001 → fixture (stdio)
+   # Default listen port is 8001; use --port if it is busy (dogfood often uses 18021).
+   mcp-trace --stdio --port 18021 --otel-stdout --include-lifecycle -- \
+     python3 -m trace_canary.fixture_server
    ```
 
-3. Export spans (OTLP collector file exporter, Jaeger dump, or your JSONL
-   pipeline — whatever you already ship from
+   Topology:
+
+   ```
+   HTTP MCP client  →  http://127.0.0.1:<port>/  →  mcp-trace  →  fixture (stdio)
+   ```
+
+3. Export spans (`--otel-stdout`, OTLP collector file exporter, Jaeger dump, or
+   your JSONL pipeline — whatever you already ship from
    [agent-obs-lab](https://github.com/anhermon/agent-obs-lab)).
 4. Scan the export:
 
@@ -99,11 +112,21 @@ python3 -m trace_canary self-test [--sarif raw.sarif] [--keep]
    python3 -m trace_canary scan /path/to/otlp-or-jsonl --sarif leaks.sarif
    ```
 
+**One-shot smoke** (starts proxy, POSTs `initialize` / `tools/list` /
+`tools/call`, scans `--otel-stdout`):
+
+```bash
+./scripts/wrap-mcp-trace-smoke.sh
+# Optional: TRACE_CANARY_WRAP_PORT=18021 TRACE_CANARY_WRAP_OUT=./artifacts-mcp-trace-wrap
+```
+
 If mcp-trace (or your stack) ever starts recording full tool arguments / raw
 error bodies, canaries from `canaries/secrets.json` will light up.
 
-The built-in recorder also embeds an `mcp_trace` probe in `summary.json`
-(`on_path`, version) so CI logs show whether the proxy is available.
+The built-in recorder embeds an `mcp_trace` probe in `summary.json`
+(`on_path`, version) so CI logs show whether the proxy is available. That probe
+is informational only — it does **not** wrap the fixture. Use the commands
+above (or `./scripts/wrap-mcp-trace-smoke.sh`) for real wrap dogfood.
 
 ## Artifacts written by `run`
 
@@ -122,6 +145,7 @@ The built-in recorder also embeds an `mcp_trace` probe in `summary.json`
 2. `run --mode redact` + `scan` (must pass)
 3. Uploads SARIF from the raw self-test leg for inspection (not enforced as a
    blocking code-scanning upload — keeps the workflow free of extra permissions)
+4. Optional unit tests via `pip install pytest && pytest` (not required locally)
 
 ## Design notes
 
